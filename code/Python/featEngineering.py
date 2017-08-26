@@ -47,4 +47,10 @@ def GetFeatures(df):
     
     return df
     
+def ExpFeatures(df):
+
+    df = df.copy()
     
+    df['sold_after_build'] = df['trans_year'] - df['yearbuilt']
+    
+    return df    

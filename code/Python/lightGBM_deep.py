@@ -17,8 +17,10 @@ import datetime as dt
 from sklearn.model_selection import GridSearchCV
 import os
 
-basePath = 'C:/Users/evanm_000/Documents/GitHub/Zillow-Kaggle'
+project = 'Zillow'
+basePath = 'C:/Users/Evan/Documents/GitHub/' + project
 funcPath = basePath + '/code/Python'
+subPath = 'F:/Nerdy Stuff/Kaggle submissions' + project
 
 os.chdir(basePath)
 
@@ -37,7 +39,7 @@ os.chdir(funcPath)
 
 from modelFuncs import MAE, TrainValidSplit
 from dataPrep import DataFrameDeets
-from featEngineering import ExtractTimeFeats, sqFtFeat
+from featEngineering import ExtractTimeFeats, sqFtFeat, ExpFeatures
 
 #==============================================================================
 # Setting up results logging
@@ -69,19 +71,15 @@ for c, dtype in zip(properties.columns, properties.dtypes):
 df_train = (train.merge(properties, how='left', on='parcelid')
                 .assign(transactiondate = lambda x: pd.to_datetime(x['transactiondate'])))
 
+import foo
+method_to_call = getattr(foo, 'bar')
+result = method_to_call()
+
+
 DataFrameDeets(df_train, 'train + property - base')
 
 df_train = ExtractTimeFeats(df_train)
 DataFrameDeets(df_train, 'train + property - date features')
-
-def ExpFeatures(df):
-
-    df = df.copy()
-    
-    df['sold_after_build'] = df['trans_year'] - df['yearbuilt']
-    df = sqFtFeat(df)
-    
-    return df
 
 df_train = ExpFeatures(df_train)
 
@@ -100,7 +98,12 @@ df_train = ExpFeatures(df_train)
 resLog['trainTestMonths'] = 0.5 # Set to 1 for no validation
 resLog['trainElseMonths'] = 0.8 # Set to 1 for no validation
 
+monthSplits = {}
+monthSplits['trainTestMonths'] = resLog['trainTestMonths']
+monthSplits['trainElseMonths'] = resLog['trainElseMonths']
+
 testMonths = [10, 11, 12]
+resLog['testMonths'] = ', '.join(str(month) for month in testMonths)
 
 train, valid = TrainValidSplit(df_train, testMonths, monthSplits)
 
