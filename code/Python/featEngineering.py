@@ -54,3 +54,21 @@ def ExpFeatures(df):
     df['sold_after_build'] = df['trans_year'] - df['yearbuilt']
     
     return df    
+
+def ApplyFeatEngineering(df, dfName, featEngList):
+    
+    import featEngineering
+    from dataPrep import DataFrameDeets
+    
+    df = df.copy()
+    
+    for func in featEngList:
+        
+        print(func + ' applied to training set..')
+    
+        featTransform = getattr(featEngineering, func)
+        
+        df = featTransform(df)
+        DataFrameDeets(df, 'train + ' + func)
+        
+    return df

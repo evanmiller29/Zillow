@@ -31,7 +31,7 @@ os.chdir(basePath)
 print('Loading data ...')
 
 train = pd.read_csv('data/train_2016_v2.csv')
-properties = pd.read_csv('data/properties_2016.csv')
+properties = pd.read_csv('data/properties_2016.csv', low_memory=False)
 sample = (pd.read_csv('data/sample_submission.csv')
             .rename(columns = {'ParcelId':'parcelid'}))
 
@@ -39,7 +39,7 @@ os.chdir(funcPath)
 
 from modelFuncs import MAE, TrainValidSplit
 from dataPrep import DataFrameDeets
-from featEngineering import ExtractTimeFeats, sqFtFeat, ExpFeatures
+from featEngineering import ApplyFeatEngineering
 
 #==============================================================================
 # Setting up results logging
@@ -60,6 +60,9 @@ resLog['underSampElseMonths'] = False
 resLog['minorSampRate'] = 0.10
 resLog['majorRedRate'] = 0.2
 
+funcsUsed = ['ExtractTimeFeats', 'sqFtFeat', 'ExpFeatures']
+resLog['funcsUsed'] = ', '.join(funcsUsed)
+
 #==============================================================================
 # Feature engineering
 #==============================================================================
@@ -71,17 +74,9 @@ for c, dtype in zip(properties.columns, properties.dtypes):
 df_train = (train.merge(properties, how='left', on='parcelid')
                 .assign(transactiondate = lambda x: pd.to_datetime(x['transactiondate'])))
 
-import foo
-method_to_call = getattr(foo, 'bar')
-result = method_to_call()
+DataFrameDeets(df_train, 'train + properties file - before feat engineering..')
 
-
-DataFrameDeets(df_train, 'train + property - base')
-
-df_train = ExtractTimeFeats(df_train)
-DataFrameDeets(df_train, 'train + property - date features')
-
-df_train = ExpFeatures(df_train)
+df_train = ApplyFeatEngineering(df_train, 'training + properties set', funcsUsed)
 
 #==============================================================================
 # The idea area
