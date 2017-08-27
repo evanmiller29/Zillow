@@ -89,3 +89,20 @@ def XGBdata(propDF, trainDF, FeatEnginnering, lowerBound, upperBound):
 def DataFrameDeets(df, dfName):
 
     print("The %s dataset has %s columns and %s rows" % (dfName, df.shape[1], df.shape[0]))
+    
+def ConvertCats(df):
+    
+    import pandas as pd
+    
+    df = df.copy()
+    
+    for c in df.dtypes[df.dtypes == "category"].index.values:
+    
+        print(c + ' convered with OHE..')
+    
+        cat = pd.get_dummies(df[c])
+        df = df.drop(c, axis = 1)
+        
+        df= pd.concat([df, cat], axis = 1)   
+    
+    return(df)

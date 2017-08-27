@@ -35,10 +35,16 @@ properties = pd.read_csv('data/properties_2016.csv', low_memory=False)
 sample = (pd.read_csv('data/sample_submission.csv')
             .rename(columns = {'ParcelId':'parcelid'}))
 
+test_dates = ['2016-10-01','2016-11-01','2016-12-01','2017-10-01','2017-11-01','2017-12-01']
+test_columns = ['201610','201611','201612','201710','201711','201712']
+
+print("Prepare for the prediction ...")
+df_test = sample.merge(properties, on='parcelid', how='left')
+
 os.chdir(funcPath)
 
 from modelFuncs import MAE, TrainValidSplit
-from dataPrep import DataFrameDeets
+from dataPrep import DataFrameDeets, ConvertCats
 from featEngineering import ApplyFeatEngineering
 
 #==============================================================================
@@ -115,26 +121,12 @@ valid_columns = x_valid.columns
 for c in x_train.dtypes[x_train.dtypes == object].index.values:
     x_train[c] = (x_train[c] == True)
 
-for c in x_train.dtypes[x_train.dtypes == "category"].index.values:
-    
-    print(c + ' convered with OHE..')
-    
-    cat = pd.get_dummies(x_train[c])
-    x_train = x_train.drop(c, axis = 1)
-    
-    x_train = pd.concat([x_train, cat], axis = 1)   
+x_train = ConvertCats(x_train) 
 
 for c in x_valid.dtypes[x_valid.dtypes == object].index.values:
     x_valid[c] = (x_valid[c] == True)
 
-for c in x_valid.dtypes[x_valid.dtypes == "category"].index.values:
-    
-    print(c + ' convered with OHE..')
-    
-    cat = pd.get_dummies(x_valid[c])
-    x_valid = x_valid.drop(c, axis = 1)
-    
-    x_valid = pd.concat([x_valid, cat], axis = 1)   
+x_valid = ConvertCats(x_valid) 
 
 x_train = x_train.values.astype(np.float32, copy=False)
 x_valid = x_valid.values.astype(np.float32, copy=False)
@@ -188,7 +180,7 @@ param_grid = {
     
 }
 
-gbmCV = GridSearchCV(estimator, param_grid, n_jobs= coresUsed)
+gbmCV = GridSearchCV(estimator, param_grid, n_jobs= resLog['coresUsed'])
 gbmCV.fit(x_train, y_train)
 
 print('Best parameters found by grid search are:', gbmCV.best_params_)
@@ -202,12 +194,6 @@ cvAcc = round(MAE(y_valid, y_pred), 5)
 # Preparing the submission
 #==============================================================================
 
-test_dates = ['2016-10-01','2016-11-01','2016-12-01','2017-10-01','2017-11-01','2017-12-01']
-test_columns = ['201610','201611','201612','201710','201711','201712']
-
-print("Prepare for the prediction ...")
-df_test = sample.merge(properties, on='parcelid', how='left')
-
 clf.reset_parameter({"num_threads":4})
 
 print( "\nPredicting using LightGBM and month features: ..." )
@@ -216,19 +202,20 @@ for i in range(len(test_dates)):
     
     x_test = df_test.drop(['parcelid', 'propertyzoningdesc', 'propertycountylandusecode'], axis = 1)    
     
-    x_test['transactiondate'] = test_dates[i]
-    
-    x_test = ExtractTimeFeats(x_test)
-    x_test = ExpFeatures(x_test )
+    x_test['transactiondate'] = test_dates[i]   
+    x_test = ApplyFeatEngineering(x_test, 'test set', funcsUsed)   
     x_test = x_test.drop('transactiondate', axis = 1)
     
     for c in x_test.dtypes[x_test.dtypes == object].index.values:
         x_test[c] = (x_test[c] == True)
+        
+    x_test = ConvertCats(x_test)        
+        
     x_test = x_test.values.astype(np.float32, copy=False)
 
     pred = clf.predict(x_test, num_iteration = clf.best_iteration)
     sample[test_columns[i]] = [float(format(x, '.4f')) for x in pred]
     print('predict...', i)    
 
-os.chdir(basePath)
+os.chdir(subPath)
 sample.to_csv('submissions/sub{}_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'), cvAcc), index=False, float_format='%.4f')
