@@ -166,38 +166,6 @@ y_pred = clf.predict(x_valid, num_iteration=clf.best_iteration)
 resLog['cvAcc'] = round(MAE(y_valid, y_pred), 5)
 
 #==============================================================================
-# Running grid search on parameters
-#==============================================================================
-
-#==============================================================================
-# estimator = lgb.LGBMRegressor()
-# 
-# param_grid = {
-#     'metric': 'mae',
-#     'boosting_type': 'gbdt',
-#     'learning_rate': [0.001, 0.1, 1],
-#     'n_estimators': [20, 80, 100],
-#     'max_depth': [10, 4, 1],
-#     'num_leaves': [5, 20, 30],
-#     'sub_feature': [0.25, 0.75, 0.95],
-#     'bagging_fraction': [0.25, 0.75, 0.95],
-#     'min_data': [20, 100, 500],
-#     'min_hessian': [1, 10]
-#     
-# }
-# 
-# gbmCV = GridSearchCV(estimator, param_grid, n_jobs= resLog['coresUsed'])
-# gbmCV.fit(x_train, y_train)
-# 
-# print('Best parameters found by grid search are:', gbmCV.best_params_)
-# 
-# gbmCV.feature_importances_
-# 
-# y_pred = gbmCV.predict(x_valid)
-# cvAcc = round(MAE(y_valid, y_pred), 5)
-#==============================================================================
-
-#==============================================================================
 # Preparing the submission
 #==============================================================================
 
