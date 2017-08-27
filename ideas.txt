@@ -1,0 +1,20 @@
+Feature engineering:
+   
+#df_train['censustractandblock'].value_counts()
+#df_train['regionidzip'].value_counts()
+#groupby by month for important base vars to try squeeze out more predicatability
+
+hyperparams
+
+#==============================================================================
+# params = {}
+# params['learning_rate'] = 0.002
+# params['boosting_type'] = 'gbdt'
+# params['objective'] = 'regression'
+# params['metric'] = 'mae'
+# params['sub_feature'] = 0.5
+# params['num_leaves'] = 60
+# params['min_data'] = 500
+# params['min_hessian'] = 1
+# 
+#==============================================================================

@@ -79,14 +79,6 @@ DataFrameDeets(df_train, 'train + properties file - before feat engineering..')
 df_train = ApplyFeatEngineering(df_train, 'training + properties set', funcsUsed)
 
 #==============================================================================
-# The idea area
-#==============================================================================
-    
-#df_train['censustractandblock'].value_counts()
-#df_train['regionidzip'].value_counts()
-#groupby by month for important base vars to try squeeze out more predicatability
-
-#==============================================================================
 # Splitting off a validation set
 #==============================================================================
 
@@ -147,20 +139,13 @@ for c in x_valid.dtypes[x_valid.dtypes == "category"].index.values:
 x_train = x_train.values.astype(np.float32, copy=False)
 x_valid = x_valid.values.astype(np.float32, copy=False)
 
+resLog['model'] = 'lightGBM'
+
 d_train = lgb.Dataset(x_train, label=y_train)
 d_valid = lgb.Dataset(x_valid, label=y_valid)
 
 #==============================================================================
-# params = {}
-# params['learning_rate'] = 0.002
-# params['boosting_type'] = 'gbdt'
-# params['objective'] = 'regression'
-# params['metric'] = 'mae'
-# params['sub_feature'] = 0.5
-# params['num_leaves'] = 60
-# params['min_data'] = 500
-# params['min_hessian'] = 1
-# 
+# Setting up model run
 #==============================================================================
 
 params = {}
@@ -175,11 +160,13 @@ params['min_hessian'] = 1
 params['bagging_fraction'] = 0.55
 params['max_depth'] = 10
 
+resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
+
 watchlist = [d_valid]
 clf = lgb.train(params, d_train, 1000, watchlist)
 
 y_pred = clf.predict(x_valid, num_iteration=clf.best_iteration)
-cvAcc = round(MAE(y_valid, y_pred), 5)
+resLog['cvAcc'] = round(MAE(y_valid, y_pred), 5)
 
 #==============================================================================
 # Running grid search on parameters
