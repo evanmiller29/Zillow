@@ -20,7 +20,7 @@ import os
 project = 'Zillow'
 basePath = 'C:/Users/Evan/Documents/GitHub/' + project
 funcPath = basePath + '/code/Python'
-subPath = 'F:/Nerdy Stuff/Kaggle submissions' + project
+subPath = 'F:/Nerdy Stuff/Kaggle submissions/' + project
 
 os.chdir(basePath)
 
@@ -68,6 +68,25 @@ resLog['majorRedRate'] = 0.2
 
 funcsUsed = ['ExtractTimeFeats', 'sqFtFeat', 'ExpFeatures']
 resLog['funcsUsed'] = ', '.join(funcsUsed)
+
+#==============================================================================
+# Model hyperparameters
+#==============================================================================
+
+params = {}
+params['learning_rate'] = 0.0001
+params['boosting_type'] = 'gbdt'
+params['objective'] = 'regression'
+params['metric'] = 'mae'
+params['sub_feature'] = 0.50
+params['num_leaves'] = 60
+params['min_data'] = 500
+params['min_hessian'] = 1
+params['bagging_fraction'] = 0.55
+params['max_depth'] = 10
+
+resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
+
 
 #==============================================================================
 # Feature engineering
@@ -140,20 +159,6 @@ d_valid = lgb.Dataset(x_valid, label=y_valid)
 # Setting up model run
 #==============================================================================
 
-params = {}
-params['learning_rate'] = 0.0001
-params['boosting_type'] = 'gbdt'
-params['objective'] = 'regression'
-params['metric'] = 'mae'
-params['sub_feature'] = 0.50
-params['num_leaves'] = 60
-params['min_data'] = 500
-params['min_hessian'] = 1
-params['bagging_fraction'] = 0.55
-params['max_depth'] = 10
-
-resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
-
 watchlist = [d_valid]
 clf = lgb.train(params, d_train, 1000, watchlist)
 
@@ -164,31 +169,33 @@ resLog['cvAcc'] = round(MAE(y_valid, y_pred), 5)
 # Running grid search on parameters
 #==============================================================================
 
-estimator = lgb.LGBMRegressor()
-
-param_grid = {
-    'metric': 'mae',
-    'boosting_type': 'gbdt',
-    'learning_rate': [0.001, 0.1, 1],
-    'n_estimators': [20, 80, 100],
-    'max_depth': [10, 4, 1],
-    'num_leaves': [5, 20, 30],
-    'sub_feature': [0.25, 0.75, 0.95],
-    'bagging_fraction': [0.25, 0.75, 0.95],
-    'min_data': [20, 100, 500],
-    'min_hessian': [1, 10]
-    
-}
-
-gbmCV = GridSearchCV(estimator, param_grid, n_jobs= resLog['coresUsed'])
-gbmCV.fit(x_train, y_train)
-
-print('Best parameters found by grid search are:', gbmCV.best_params_)
-
-gbmCV.feature_importances_
-
-y_pred = gbmCV.predict(x_valid)
-cvAcc = round(MAE(y_valid, y_pred), 5)
+#==============================================================================
+# estimator = lgb.LGBMRegressor()
+# 
+# param_grid = {
+#     'metric': 'mae',
+#     'boosting_type': 'gbdt',
+#     'learning_rate': [0.001, 0.1, 1],
+#     'n_estimators': [20, 80, 100],
+#     'max_depth': [10, 4, 1],
+#     'num_leaves': [5, 20, 30],
+#     'sub_feature': [0.25, 0.75, 0.95],
+#     'bagging_fraction': [0.25, 0.75, 0.95],
+#     'min_data': [20, 100, 500],
+#     'min_hessian': [1, 10]
+#     
+# }
+# 
+# gbmCV = GridSearchCV(estimator, param_grid, n_jobs= resLog['coresUsed'])
+# gbmCV.fit(x_train, y_train)
+# 
+# print('Best parameters found by grid search are:', gbmCV.best_params_)
+# 
+# gbmCV.feature_importances_
+# 
+# y_pred = gbmCV.predict(x_valid)
+# cvAcc = round(MAE(y_valid, y_pred), 5)
+#==============================================================================
 
 #==============================================================================
 # Preparing the submission
@@ -218,4 +225,4 @@ for i in range(len(test_dates)):
     print('predict...', i)    
 
 os.chdir(subPath)
-sample.to_csv('submissions/sub{}_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'), cvAcc), index=False, float_format='%.4f')
+sample.to_csv('sub{}_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'), resLog['cvAcc']), index=False, float_format='%.4f')
