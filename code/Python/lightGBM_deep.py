@@ -123,8 +123,26 @@ valid_columns = x_valid.columns
 for c in x_train.dtypes[x_train.dtypes == object].index.values:
     x_train[c] = (x_train[c] == True)
 
+for c in x_train.dtypes[x_train.dtypes == "category"].index.values:
+    
+    print(c + ' convered with OHE..')
+    
+    cat = pd.get_dummies(x_train[c])
+    x_train = x_train.drop(c, axis = 1)
+    
+    x_train = pd.concat([x_train, cat], axis = 1)   
+
 for c in x_valid.dtypes[x_valid.dtypes == object].index.values:
     x_valid[c] = (x_valid[c] == True)
+
+for c in x_valid.dtypes[x_valid.dtypes == "category"].index.values:
+    
+    print(c + ' convered with OHE..')
+    
+    cat = pd.get_dummies(x_valid[c])
+    x_valid = x_valid.drop(c, axis = 1)
+    
+    x_valid = pd.concat([x_valid, cat], axis = 1)   
 
 x_train = x_train.values.astype(np.float32, copy=False)
 x_valid = x_valid.values.astype(np.float32, copy=False)
@@ -163,7 +181,6 @@ clf = lgb.train(params, d_train, 1000, watchlist)
 y_pred = clf.predict(x_valid, num_iteration=clf.best_iteration)
 cvAcc = round(MAE(y_valid, y_pred), 5)
 
-pd.Series(params)
 #==============================================================================
 # Running grid search on parameters
 #==============================================================================
