@@ -16,6 +16,7 @@ from datetime import datetime
 import datetime as dt
 from sklearn.model_selection import GridSearchCV
 import os
+import time
 
 project = 'Zillow'
 basePath = 'C:/Users/Evan/Documents/GitHub/' + project
@@ -69,6 +70,8 @@ resLog['majorRedRate'] = 0.2
 funcsUsed = ['ExtractTimeFeats', 'sqFtFeat', 'ExpFeatures']
 resLog['funcsUsed'] = ', '.join(funcsUsed)
 
+resLog['grid_search'] = False
+
 #==============================================================================
 # Model hyperparameters
 #==============================================================================
@@ -86,7 +89,6 @@ params['bagging_fraction'] = 0.55
 params['max_depth'] = 10
 
 resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
-
 
 #==============================================================================
 # Feature engineering
@@ -160,7 +162,19 @@ d_valid = lgb.Dataset(x_valid, label=y_valid)
 #==============================================================================
 
 watchlist = [d_valid]
+
+start = time.time()
+resLog['startTime'] = dt.datetime.fromtimestamp(start).strftime('%c')
+
 clf = lgb.train(params, d_train, 1000, watchlist)
+end = time.time()
+
+timeElapsed = end - start
+
+m, s = divmod(timeElapsed, 60)
+h, m = divmod(m, 60)
+
+resLog['timeElapsed'] = "%d:%02d:%02d" % (h, m, s)
 
 y_pred = clf.predict(x_valid, num_iteration=clf.best_iteration)
 resLog['cvAcc'] = round(MAE(y_valid, y_pred), 5)
@@ -190,7 +204,35 @@ for i in range(len(test_dates)):
 
     pred = clf.predict(x_test, num_iteration = clf.best_iteration)
     sample[test_columns[i]] = [float(format(x, '.4f')) for x in pred]
-    print('predict...', i)    
+    print('predict...', test_dates[i])    
+
+
+#==============================================================================
+# Saving predictions to file
+#==============================================================================
+
+print('Saving predictions to file..')
 
 os.chdir(subPath)
 sample.to_csv('sub{}_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M%S'), resLog['cvAcc']), index=False, float_format='%.4f')
+
+#==============================================================================
+# Logging outputs
+#==============================================================================
+
+print('Outputting logs..')
+
+os.chdir(basePath)
+
+logDF = (pd.DataFrame(list(resLog.items()))
+            .rename(columns = {0: 'desc', 1: 'values'})
+            .pivot(columns = 'desc')
+            .fillna(method = 'ffill')
+            .fillna(method = 'bfill'))
+            
+cols = [val[1] for val in logDF.columns.values]
+logDF.columns = cols
+           
+logs = pd.read_csv('modelling_log.csv')
+logDF = logs.append(logDF.loc[0, :])
+logDF.to_csv('modelling_log.csv', index_label = False, index = False)
