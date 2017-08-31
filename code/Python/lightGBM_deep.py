@@ -70,7 +70,7 @@ resLog['majorRedRate'] = 0.2
 funcsUsed = ['ExtractTimeFeats', 'sqFtFeat', 'ExpFeatures']
 resLog['funcsUsed'] = ', '.join(funcsUsed)
 
-resLog['grid_search'] = False
+resLog['grid_search'] = True
 
 #==============================================================================
 # Model hyperparameters
@@ -89,6 +89,26 @@ params['bagging_fraction'] = 0.55
 params['max_depth'] = 10
 
 resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
+
+#==============================================================================
+# Grid search params
+#==============================================================================
+
+estimator = lgb.LGBMRegressor()
+ 
+param_grid = {
+'metric': ['mae'],
+'boosting_type': ['gbdt', 'dart'],
+'learning_rate': [0.001, 0.1, 1],
+'n_estimators': [20, 80, 100],
+'max_depth': [10, 4, 1],
+'num_leaves': [5, 20, 30],
+'sub_feature': [0.25, 0.75, 0.95],
+'bagging_fraction': [0.25, 0.75, 0.95],
+'min_data': [20, 100, 500],
+'min_hessian': [1, 10]
+ 
+}
 
 #==============================================================================
 # Feature engineering
@@ -160,6 +180,36 @@ d_valid = lgb.Dataset(x_valid, label=y_valid)
 #==============================================================================
 # Setting up model run
 #==============================================================================
+
+if resLog['grid_search'] == True:
+    
+    print('Running parameter search..')
+    
+    start = time.time()
+    resLog['startTimeGrid'] = dt.datetime.fromtimestamp(start).strftime('%c')
+    
+    CV = GridSearchCV(estimator, param_grid, n_jobs= resLog['coresUsed'])
+    CV.fit(x_train, y_train)
+    
+    end = time.time()
+    
+    timeElapsed = end - start
+    
+    m, s = divmod(timeElapsed, 60)
+    h, m = divmod(m, 60)
+    
+    resLog['timeElapsedGrid'] = "%d:%02d:%02d" % (h, m, s)
+    
+    params = CV.best_params_
+    
+    print('Best parameters found by grid search are:', params)
+    
+    resLog['paramsUsed'] = ', '.join([k + ' = ' + str(v) for k, v in params.items()])
+    
+if resLog['grid_search'] == False:
+    
+    resLog['startTimeGrid'] = np.nan
+    resLog['timeElapsedGrid'] = np.nan
 
 watchlist = [d_valid]
 
